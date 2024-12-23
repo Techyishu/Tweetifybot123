@@ -5,139 +5,155 @@ import { generateTweet, generateThread } from './generator.js';
 
 dotenv.config();
 
-// Validate environment variables
-const validateEnv = () => {
-  const requiredEnvVars = {
-    'TELEGRAM_BOT_TOKEN': process.env.TELEGRAM_BOT_TOKEN,
-    'OPENAI_API_KEY': process.env.OPENAI_API_KEY
-  };
+// Initialize bot with polling error handling
+const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
+  polling: {
+    interval: 300,
+    autoStart: true,
+    params: {
+      timeout: 10
+    }
+  }
+});
 
-  const missingVars = Object.entries(requiredEnvVars)
-    .filter(([_, value]) => !value)
-    .map(([key]) => key);
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
-  if (missingVars.length > 0) {
-    throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+// Error handling for polling errors
+bot.on('polling_error', (error) => {
+  console.error('Polling error:', error);
+  // Attempt to restart polling after a delay
+  setTimeout(() => {
+    try {
+      bot.startPolling();
+    } catch (e) {
+      console.error('Failed to restart polling:', e);
+    }
+  }, 5000);
+});
+
+// Error handling for general bot errors
+bot.on('error', (error) => {
+  console.error('Bot error:', error);
+});
+
+const userLastRequests = new Map();
+
+const saveLastRequest = (chatId, type, thought) => {
+  userLastRequests.set(chatId, { type, thought, timestamp: Date.now() });
+};
+
+const getLastRequest = (chatId) => {
+  const request = userLastRequests.get(chatId);
+  if (!request || Date.now() - request.timestamp > 300000) {
+    return null;
+  }
+  return request;
+};
+
+// Wrap bot methods in try-catch blocks
+const safeSendMessage = async (chatId, text, options = {}) => {
+  try {
+    return await bot.sendMessage(chatId, text, options);
+  } catch (error) {
+    console.error('Error sending message:', error);
+    return null;
   }
 };
 
-try {
-  // Validate environment variables before starting the bot
-  validateEnv();
+const safeDeleteMessage = async (chatId, messageId) => {
+  try {
+    return await bot.deleteMessage(chatId, messageId);
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    return false;
+  }
+};
 
-  const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { 
-    polling: true,
-    // Add error handling for polling errors
-    onlyFirstMatch: true,
-    request: {
-      timeout: 30000
-    }
-  });
+bot.onText(/\/tweet (.+)/, async (msg, match) => {
+  const chatId = msg.chat.id;
+  const userThought = match[1];
 
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
-
-  // Handle polling errors
-  bot.on('polling_error', (error) => {
-    console.error('Polling error:', error.message);
-    if (error.message.includes('ETELEGRAM: 404')) {
-      console.error('Invalid Telegram bot token. Please check your TELEGRAM_BOT_TOKEN in .env file');
-      process.exit(1);
-    }
-  });
-
-  // Rest of your bot code remains the same...
-  const userLastRequests = new Map();
-
-  const saveLastRequest = (chatId, type, thought) => {
-    userLastRequests.set(chatId, { type, thought, timestamp: Date.now() });
-  };
-
-  const getLastRequest = (chatId) => {
-    const request = userLastRequests.get(chatId);
-    if (!request || Date.now() - request.timestamp > 300000) {
-      return null;
-    }
-    return request;
-  };
-
-  bot.onText(/\/tweet (.+)/, async (msg, match) => {
-    const chatId = msg.chat.id;
-    const userThought = match[1];
-
-    try {
-      const loadingMsg = await bot.sendMessage(chatId, '✨ Enhancing your thought into a tweet...');
+  try {
+    const loadingMsg = await safeSendMessage(chatId, '✨ Enhancing your thought into a tweet...');
+    if (loadingMsg) {
       const tweet = await generateTweet(openai, userThought);
-      await bot.deleteMessage(chatId, loadingMsg.message_id);
-      bot.sendMessage(chatId, `🎯 Enhanced Tweet:\n\n${tweet}\n\n🔄 Use /regenerate for a different version.`);
+      await safeDeleteMessage(chatId, loadingMsg.message_id);
+      await safeSendMessage(chatId, `🎯 Enhanced Tweet:\n\n${tweet}\n\n🔄 Use /regenerate for a different version.`);
       saveLastRequest(chatId, 'tweet', userThought);
-    } catch (error) {
-      console.error('Tweet generation error:', error);
-      bot.sendMessage(chatId, '❌ Sorry, there was an error enhancing your thought.');
     }
-  });
+  } catch (error) {
+    console.error('Tweet generation error:', error);
+    await safeSendMessage(chatId, '❌ Sorry, there was an error enhancing your thought.');
+  }
+});
 
-  bot.onText(/\/thread (.+)/, async (msg, match) => {
-    const chatId = msg.chat.id;
-    const userThought = match[1];
+bot.onText(/\/thread (.+)/, async (msg, match) => {
+  const chatId = msg.chat.id;
+  const userThought = match[1];
 
-    try {
-      const loadingMsg = await bot.sendMessage(chatId, '✨ Expanding your thought into a thread...');
+  try {
+    const loadingMsg = await safeSendMessage(chatId, '✨ Expanding your thought into a thread...');
+    if (loadingMsg) {
       const thread = await generateThread(openai, userThought);
-      await bot.deleteMessage(chatId, loadingMsg.message_id);
-      bot.sendMessage(chatId, `🧵 Enhanced Thread:\n\n${thread.join('\n\n')}\n\n🔄 Use /regenerate for a different version.`);
+      await safeDeleteMessage(chatId, loadingMsg.message_id);
+      await safeSendMessage(chatId, `🧵 Enhanced Thread:\n\n${thread.join('\n\n')}\n\n🔄 Use /regenerate for a different version.`);
       saveLastRequest(chatId, 'thread', userThought);
-    } catch (error) {
-      console.error('Thread generation error:', error);
-      bot.sendMessage(chatId, '❌ Sorry, there was an error expanding your thought.');
     }
-  });
+  } catch (error) {
+    console.error('Thread generation error:', error);
+    await safeSendMessage(chatId, '❌ Sorry, there was an error expanding your thought.');
+  }
+});
 
-  bot.onText(/\/regenerate/, async (msg) => {
-    const chatId = msg.chat.id;
-    const lastRequest = getLastRequest(chatId);
+bot.onText(/\/regenerate/, async (msg) => {
+  const chatId = msg.chat.id;
+  const lastRequest = getLastRequest(chatId);
 
-    if (!lastRequest) {
-      return bot.sendMessage(chatId, '⚠️ No recent content to regenerate. Share your thought using /tweet or /thread first.');
-    }
+  if (!lastRequest) {
+    return await safeSendMessage(chatId, '⚠️ No recent content to regenerate. Share your thought using /tweet or /thread first.');
+  }
 
-    try {
-      const loadingMsg = await bot.sendMessage(chatId, `🔄 Creating a fresh ${lastRequest.type} from your thought...`);
-      
+  try {
+    const loadingMsg = await safeSendMessage(chatId, `🔄 Creating a fresh ${lastRequest.type} from your thought...`);
+    if (loadingMsg) {
       const content = lastRequest.type === 'tweet' 
         ? await generateTweet(openai, lastRequest.thought)
         : await generateThread(openai, lastRequest.thought);
 
-      await bot.deleteMessage(chatId, loadingMsg.message_id);
+      await safeDeleteMessage(chatId, loadingMsg.message_id);
       
       if (lastRequest.type === 'tweet') {
-        bot.sendMessage(chatId, `🎯 New Version:\n\n${content}\n\n🔄 Use /regenerate to try again.`);
+        await safeSendMessage(chatId, `🎯 New Version:\n\n${content}\n\n🔄 Use /regenerate to try again.`);
       } else {
-        bot.sendMessage(chatId, `🧵 New Thread Version:\n\n${content.join('\n\n')}\n\n🔄 Use /regenerate to try again.`);
+        await safeSendMessage(chatId, `🧵 New Thread Version:\n\n${content.join('\n\n')}\n\n🔄 Use /regenerate to try again.`);
       }
       
       saveLastRequest(chatId, lastRequest.type, lastRequest.thought);
-    } catch (error) {
-      console.error('Regeneration error:', error);
-      bot.sendMessage(chatId, '❌ Sorry, there was an error regenerating your content.');
     }
-  });
+  } catch (error) {
+    console.error('Regeneration error:', error);
+    await safeSendMessage(chatId, '❌ Sorry, there was an error regenerating your content.');
+  }
+});
 
-  bot.onText(/\/start/, (msg) => {
-    const chatId = msg.chat.id;
-    bot.sendMessage(chatId, 
-      '👋 Welcome to your Thought Enhancer!\n\n' +
-      '🎯 Share your thoughts and I\'ll make them shine:\n\n' +
-      '🐦 /tweet [your thought] - Transform into an engaging tweet\n' +
-      '🧵 /thread [your thought] - Expand into an insightful thread\n' +
-      '🔄 /regenerate - Get a fresh version of your last enhancement'
-    );
-  });
+bot.onText(/\/start/, async (msg) => {
+  const chatId = msg.chat.id;
+  await safeSendMessage(chatId, 
+    '👋 Welcome to your Thought Enhancer!\n\n' +
+    '🎯 Share your thoughts and I\'ll make them shine:\n\n' +
+    '🐦 /tweet [your thought] - Transform into an engaging tweet\n' +
+    '🧵 /thread [your thought] - Expand into an insightful thread\n' +
+    '🔄 /regenerate - Get a fresh version of your last enhancement'
+  );
+});
 
-  console.log('Bot started successfully! Make sure you have set up your bot with @BotFather and copied the correct token.');
+// Handle connection errors
+process.on('unhandledRejection', (error) => {
+  console.error('Unhandled promise rejection:', error);
+});
 
-} catch (error) {
-  console.error('Startup error:', error.message);
-  process.exit(1);
+console.log('Bot started successfully! Press Ctrl+C to stop.');
+
 }
