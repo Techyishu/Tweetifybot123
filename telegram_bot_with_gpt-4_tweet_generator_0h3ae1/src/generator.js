@@ -15,9 +15,9 @@ Requirements:
 
 Focus on creating a tweet that starts a fun or thoughtful conversation.`
     }, {
-      role: "user",
-      content: `Transform this thought into an engaging tweet:  ${userThought}`
-    }],
+  role: "user",
+  content: `Transform this thought into an engaging tweet:  ${userThought}`
+}],
     max_tokens: 300,
     temperature: 0.85
   });
