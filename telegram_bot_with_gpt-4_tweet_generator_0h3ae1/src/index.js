@@ -41,8 +41,8 @@ bot.on('error', (error) => {
 
 const userLastRequests = new Map();
 
-const saveLastRequest = (chatId, type, thought) => {
-  userLastRequests.set(chatId, { type, thought, timestamp: Date.now() });
+const saveLastRequest = (chatId, type, input) => {
+  userLastRequests.set(chatId, { type, input, timestamp: Date.now() });
 };
 
 const getLastRequest = (chatId) => {
@@ -74,15 +74,15 @@ const safeDeleteMessage = async (chatId, messageId) => {
 
 bot.onText(/\/tweet (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
-  const userThought = match[1];
+  const input = match[1];
 
   try {
     const loadingMsg = await safeSendMessage(chatId, '✨ Enhancing your thought into a tweet...');
     if (loadingMsg) {
-      const tweet = await generateTweet(openai, userThought);
+      const tweet = await generateTweet(openai, input);
       await safeDeleteMessage(chatId, loadingMsg.message_id);
       await safeSendMessage(chatId, `🎯 Enhanced Tweet:\n\n${tweet}\n\n🔄 Use /regenerate for a different version.`);
-      saveLastRequest(chatId, 'tweet', userThought);
+      saveLastRequest(chatId, 'tweet', input);
     }
   } catch (error) {
     console.error('Tweet generation error:', error);
@@ -92,15 +92,15 @@ bot.onText(/\/tweet (.+)/, async (msg, match) => {
 
 bot.onText(/\/thread (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
-  const userThought = match[1];
+  const input = match[1];
 
   try {
     const loadingMsg = await safeSendMessage(chatId, '✨ Expanding your thought into a thread...');
     if (loadingMsg) {
-      const thread = await generateThread(openai, userThought);
+      const thread = await generateThread(openai, input);
       await safeDeleteMessage(chatId, loadingMsg.message_id);
       await safeSendMessage(chatId, `🧵 Enhanced Thread:\n\n${thread.join('\n\n')}\n\n🔄 Use /regenerate for a different version.`);
-      saveLastRequest(chatId, 'thread', userThought);
+      saveLastRequest(chatId, 'thread', input);
     }
   } catch (error) {
     console.error('Thread generation error:', error);
@@ -120,8 +120,8 @@ bot.onText(/\/regenerate/, async (msg) => {
     const loadingMsg = await safeSendMessage(chatId, `🔄 Creating a fresh ${lastRequest.type} from your thought...`);
     if (loadingMsg) {
       const content = lastRequest.type === 'tweet' 
-        ? await generateTweet(openai, lastRequest.thought)
-        : await generateThread(openai, lastRequest.thought);
+        ? await generateTweet(openai, lastRequest.input)
+        : await generateThread(openai, lastRequest.input);
 
       await safeDeleteMessage(chatId, loadingMsg.message_id);
       
@@ -131,7 +131,7 @@ bot.onText(/\/regenerate/, async (msg) => {
         await safeSendMessage(chatId, `🧵 New Thread Version:\n\n${content.join('\n\n')}\n\n🔄 Use /regenerate to try again.`);
       }
       
-      saveLastRequest(chatId, lastRequest.type, lastRequest.thought);
+      saveLastRequest(chatId, lastRequest.type, lastRequest.input);
     }
   } catch (error) {
     console.error('Regeneration error:', error);
@@ -144,7 +144,7 @@ bot.onText(/\/start/, async (msg) => {
   await safeSendMessage(chatId, 
     '👋 Welcome to your Thought Enhancer!\n\n' +
     '🎯 Share your thoughts and I\'ll make them shine:\n\n' +
-    '🐦 /tweet [your thought] - Transform into an engaging tweet\n' +
+    '🕊 /tweet [your thought] - Transform into an engaging tweet\n' +
     '🧵 /thread [your thought] - Expand into an insightful thread\n' +
     '🔄 /regenerate - Get a fresh version of your last enhancement'
   );
