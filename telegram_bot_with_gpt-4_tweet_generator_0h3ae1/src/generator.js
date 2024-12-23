@@ -7,7 +7,7 @@ const generateTweet = async (openai, userThought) => {
     model: "gpt-4",
     messages: [{
       role: "system",
-      content: `You are an expert social media content enhancer. Your job is to take someone's thoughts and transform them into a powerful, engaging tweet while maintaining their core message and integrity.
+      content: `You are an expert social media content enhancer. Your job is to take someone's thoughts and transform them into a powerful, engaging tweet while maintaining their core message and tone.
 
 Guidelines:
 - Preserve the original thought's essence
@@ -64,4 +64,3 @@ Preserve the original message while making it more engaging and thorough.`
 };
 
 export { generateTweet, generateThread };
-
