@@ -26,6 +26,7 @@ bot.on('polling_error', (error) => {
   // Attempt to restart polling after a delay
   setTimeout(() => {
     try {
+      bot.stopPolling();
       bot.startPolling();
     } catch (e) {
       console.error('Failed to restart polling:', e);
@@ -155,5 +156,3 @@ process.on('unhandledRejection', (error) => {
 });
 
 console.log('Bot started successfully! Press Ctrl+C to stop.');
-
-}
