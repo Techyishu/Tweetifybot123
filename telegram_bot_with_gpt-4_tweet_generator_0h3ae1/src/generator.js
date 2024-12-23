@@ -3,23 +3,23 @@ const generateTweet = async (openai, userThought) => {
     model: "gpt-4",
     messages: [{
       role: "system",
-      content: `Generate a casual and engaging tweet that feels natural and easy to understand.
+      content: `You are an expert social media content enhancer. Your job is to take someone's thoughts and transform them into a powerful, engaging tweet while maintaining their core message and intent.
 
-Requirements:
-	•	Write in simple, everyday language.
-	•	Start with a hook or an interesting idea.
-	•	End with a question or call-to-action to get people talking.
-	•	Keep it under 280 characters.
-	•	Make it relatable and honest.
-	•	Use emojis only if they fit (max 2-3).
-
-Focus on creating a tweet that starts a fun or thoughtful conversation.`
+Guidelines:
+- Preserve the original thought's essence
+- Make it more impactful and memorable
+- Add hooks and engagement elements
+- Use clear, concise language
+- Include relevant hashtags naturally
+- Stay under 280 characters
+- Maintain the author's voice
+Do not include quotation marks or labels in the output.`
     }, {
-  role: "user",
-  content: `Transform this thought into an engaging tweet: ${userThought}`
-}],
-    max_tokens: 300,
-    temperature: 0.85
+      role: "user",
+      content: `Transform this thought into an engaging tweet: ${userThought}`
+    }],
+    max_tokens: 150,
+    temperature: 0.7
   });
 
   return response.choices[0].message.content;
@@ -46,8 +46,8 @@ Preserve the original message while making it more engaging and thorough.`
       role: "user",
       content: `Transform this thought into an engaging thread: ${userThought}`
     }],
-    max_tokens: 750,
-    temperature: 0.85
+    max_tokens: 650,
+    temperature: 0.7
   });
 
   return response.choices[0].message.content
@@ -56,3 +56,4 @@ Preserve the original message while making it more engaging and thorough.`
 };
 
 export { generateTweet, generateThread };
+
