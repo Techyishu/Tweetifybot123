@@ -1,14 +1,14 @@
-const generateTweet = async (openai, userThought) => {
-  if (!userThought || typeof userThought !== 'string') {
-    throw new Error('Invalid user thought provided');
+const generateTweet = async (openai, input) => {
+  if (!input || typeof input !== 'string') {
+    throw new Error('Invalid input provided');
   }
 
   const response = await openai.chat.completions.create({
     model: "gpt-4",
     messages: [{
       role: "system",
-      content: `You are an expert social media content enhancer. Your job is to take someone's thoughts and transform them into a powerful, engaging tweet while maintaining their core message and tone.
-
+      content: `You are an expert social media content enhancer. Your job is to take someone's thoughts and transform them into a powerful, engaging tweet while maintaining their core message and tone[...]
+      
 Guidelines:
 - Preserve the original thought's essence
 - Make it more impactful and memorable
@@ -20,7 +20,7 @@ Guidelines:
 Do not include quotation marks or labels in the output.`
     }, {
       role: "user",
-      content: `Transform this thought into an engaging tweet: ${userThought}`
+      content: `Transform this thought into an engaging tweet: ${input}`
     }],
     max_tokens: 150,
     temperature: 0.7
@@ -33,7 +33,7 @@ Do not include quotation marks or labels in the output.`
   return response.choices[0].message.content;
 };
 
-const generateThread = async (openai, userThought) => {
+const generateThread = async (openai, input) => {
   const response = await openai.chat.completions.create({
     model: "gpt-4",
     messages: [{
@@ -52,7 +52,7 @@ Format: Number each tweet (1/5), (2/5), etc. Separate with newlines.
 Preserve the original message while making it more engaging and thorough.`
     }, {
       role: "user",
-      content: `Transform this thought into an engaging thread: ${userThought}`
+      content: `Transform this thought into an engaging thread: ${input}`
     }],
     max_tokens: 650,
     temperature: 0.7
