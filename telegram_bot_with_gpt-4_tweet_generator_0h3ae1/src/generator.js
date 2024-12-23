@@ -16,7 +16,7 @@ Requirements:
 Focus on creating a tweet that starts a fun or thoughtful conversation.`
     }, {
       role: "user",
-      content: `Transform this thought into an engaging tweet:  ${thoughts}`
+      content: `Transform this thought into an engaging tweet:  ${userThought}`
     }],
     max_tokens: 300,
     temperature: 0.85
@@ -44,7 +44,7 @@ Format: Number each tweet (1/5), (2/5), etc. Separate with newlines.
 Preserve the original message while making it more engaging and thorough.`
     }, {
       role: "user",
-      content: `Transform this thought into an engaging thread:  ${thoughts}`
+      content: `Transform this thought into an engaging thread:  ${userThought}`
     }],
     max_tokens: 750,
     temperature: 0.85
