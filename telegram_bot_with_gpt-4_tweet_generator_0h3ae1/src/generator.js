@@ -1,9 +1,13 @@
 const generateTweet = async (openai, userThought) => {
+  if (!userThought || typeof userThought !== 'string') {
+    throw new Error('Invalid user thought provided');
+  }
+
   const response = await openai.chat.completions.create({
     model: "gpt-4",
     messages: [{
       role: "system",
-      content: `You are an expert social media content enhancer. Your job is to take someone's thoughts and transform them into a powerful, engaging tweet while maintaining their core message and intent.
+      content: `You are an expert social media content enhancer. Your job is to take someone's thoughts and transform them into a powerful, engaging tweet while maintaining their core message and integrity.
 
 Guidelines:
 - Preserve the original thought's essence
@@ -21,6 +25,10 @@ Do not include quotation marks or labels in the output.`
     max_tokens: 150,
     temperature: 0.7
   });
+
+  if (!response.choices || !response.choices[0] || !response.choices[0].message) {
+    throw new Error('Unexpected response structure from OpenAI API');
+  }
 
   return response.choices[0].message.content;
 };
