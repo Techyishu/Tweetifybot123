@@ -7,7 +7,7 @@ const generateTweet = async (openai, input) => {
     model: "gpt-4",
     messages: [{
       role: "system",
-      content: `You are an expert social media content enhancer. Your job is to take someone's thoughts and transform them into a powerful, engaging tweet while maintaining their core message and tone[...]
+      content: `You are an expert social media content enhancer. Your job is to take someone's thoughts and transform them into a powerful, engaging tweet while maintaining their core message and tone.
       
 Guidelines:
 - Preserve the original thought's essence
@@ -87,13 +87,3 @@ Guidelines:
 };
 
 export { generateTweet, generateThread, suggestTweetIdeas };
-    max_tokens: 650,
-    temperature: 0.7
-  });
-
-  return response.choices[0].message.content
-    .split('\n')
-    .filter(tweet => tweet.trim().length > 0);
-};
-
-export { generateTweet, generateThread };
