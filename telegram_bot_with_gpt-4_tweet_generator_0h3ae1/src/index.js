@@ -1,7 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
-import { generateTweet, generateThread } from './generator.js';
+import { generateTweet, generateThread, suggestTweetIdeas } from './generator.js';
 
 dotenv.config();
 
@@ -139,6 +139,33 @@ bot.onText(/\/regenerate/, async (msg) => {
   }
 });
 
+bot.onText(/\/idea/, async (msg) => {
+  const chatId = msg.chat.id;
+  const sentMsg = await safeSendMessage(chatId, '📝 What do you want to talk about today?');
+  
+  bot.once('message', async (response) => {
+    const topic = response.text;
+    const loadingMsg = await safeSendMessage(chatId, '✨ Generating tweet ideas...');
+    const ideas = await suggestTweetIdeas(openai, topic);
+    
+    if (loadingMsg) {
+      await safeDeleteMessage(chatId, loadingMsg.message_id);
+      const ideasMessage = `📝 Here are some tweet ideas:\n\n${ideas.map((idea, index) => `${index + 1}. ${idea}`).join('\n')}\n\nPlease choose an idea by typing the number.`;
+
+      const suggestionsMsg = await safeSendMessage(chatId, ideasMessage);
+      
+      bot.once('message', async (choice) => {
+        const selectedIdea = ideas[parseInt(choice.text) - 1];
+        if (selectedIdea) {
+          await safeSendMessage(chatId, `You selected: ${selectedIdea}\n\nNow, you can use /tweet or /thread with this idea.`);
+        } else {
+          await safeSendMessage(chatId, 'Invalid choice. Please use /idea to restart the process.');
+        }
+      });
+    }
+  });
+});
+
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   await safeSendMessage(chatId, 
@@ -146,7 +173,8 @@ bot.onText(/\/start/, async (msg) => {
     '🎯 Share your thoughts and I\'ll make them shine:\n\n' +
     '🕊 /tweet [your thought] - Transform into an engaging tweet\n' +
     '🧵 /thread [your thought] - Expand into an insightful thread\n' +
-    '🔄 /regenerate - Get a fresh version of your last enhancement'
+    '🔄 /regenerate - Get a fresh version of your last enhancement\n' +
+    '💡 /idea - Generate tweet ideas based on a topic'
   );
 });
 
