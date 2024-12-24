@@ -63,4 +63,37 @@ Preserve the original message while making it more engaging and thorough.`
     .filter(tweet => tweet.trim().length > 0);
 };
 
+const suggestTweetIdeas = async (openai, topic) => {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4",
+    messages: [{
+      role: "system",
+      content: `You are an expert at generating tweet ideas. Provide 4-5 tweet ideas based on the given topic.
+      
+Guidelines:
+- Keep each idea concise
+- Make them engaging and interesting
+- Ensure they are related to the given topic
+- Provide a variety of angles or perspectives.`
+    }, {
+      role: "user",
+      content: `Generate tweet ideas for the topic: ${topic}`
+    }],
+    max_tokens: 150,
+    temperature: 0.7
+  });
+
+  return response.choices[0].message.content.split('\n').filter(idea => idea.trim().length > 0);
+};
+
+export { generateTweet, generateThread, suggestTweetIdeas };
+    max_tokens: 650,
+    temperature: 0.7
+  });
+
+  return response.choices[0].message.content
+    .split('\n')
+    .filter(tweet => tweet.trim().length > 0);
+};
+
 export { generateTweet, generateThread };
