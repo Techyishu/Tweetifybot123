@@ -142,18 +142,18 @@ bot.onText(/\/regenerate/, async (msg) => {
 bot.onText(/\/idea/, async (msg) => {
   const chatId = msg.chat.id;
   const sentMsg = await safeSendMessage(chatId, '📝 What do you want to talk about today?');
-  
+
   bot.once('message', async (response) => {
     const topic = response.text;
     const loadingMsg = await safeSendMessage(chatId, '✨ Generating tweet ideas...');
     const ideas = await suggestTweetIdeas(openai, topic);
-    
+
     if (loadingMsg) {
       await safeDeleteMessage(chatId, loadingMsg.message_id);
       const ideasMessage = `📝 Here are some tweet ideas:\n\n${ideas.map((idea, index) => `${index + 1}. ${idea}`).join('\n')}\n\nPlease choose an idea by typing the number.`;
 
       const suggestionsMsg = await safeSendMessage(chatId, ideasMessage);
-      
+
       bot.once('message', async (choice) => {
         const selectedIdea = ideas[parseInt(choice.text) - 1];
         if (selectedIdea) {
