@@ -7,22 +7,22 @@ const generateTweet = async (openai, input) => {
     model: "gpt-4",
     messages: [{
       role: "system",
-      content: `You are an expert social media content enhancer. Your job is to take someone's thoughts and transform them into a powerful, engaging tweet while maintaining their core message and tone.
+      content: `You are an expert in social media content creation. Your task is to transform the user's thought into a captivating tweet while keeping its core message intact.
       
 Guidelines:
-- Preserve the original thought's essence
-- Make it more impactful and memorable
-- Add hooks and engagement elements
-- Use clear, concise language
-- Include relevant hashtags naturally
-- Stay under 280 characters
-- Maintain the author's voice
-Do not include quotation marks or labels in the output.`
+- Maintain the original thought's essence
+- Make it engaging and memorable
+- Use hooks and engaging elements
+- Use simple and clear language
+- Naturally include relevant hashtags
+- Ensure the tweet is under 280 characters
+- Keep the author's voice intact
+Avoid using quotation marks or labels in the output.`
     }, {
       role: "user",
-      content: `Transform this thought into an engaging tweet: ${input}`
+      content: `Please enhance this thought into an engaging tweet: ${input}`
     }],
-    max_tokens: 150,
+    max_tokens: 350,
     temperature: 0.7
   });
 
@@ -38,21 +38,21 @@ const generateThread = async (openai, input) => {
     model: "gpt-4",
     messages: [{
       role: "system",
-      content: `You are an expert at transforming thoughts into compelling Twitter threads. Take the user's thought and expand it into an engaging thread while maintaining their core message.
+      content: `You are skilled at creating engaging Twitter threads. Expand the user's thought into an interesting thread while keeping its core message.
 
 Guidelines:
 - Start with the main thought as a hook
 - Expand on key points naturally
 - Add relevant context and insights
 - Include examples or applications
-- Maintain consistent voice and style
-- Each tweet under 280 characters
+- Maintain a consistent voice and style
+- Each tweet should be under 280 characters
 - Use 5 tweets total
 Format: Number each tweet (1/5), (2/5), etc. Separate with newlines.
 Preserve the original message while making it more engaging and thorough.`
     }, {
       role: "user",
-      content: `Transform this thought into an engaging thread: ${input}`
+      content: `Please expand this thought into an engaging thread: ${input}`
     }],
     max_tokens: 650,
     temperature: 0.7
@@ -77,9 +77,9 @@ Guidelines:
 - Provide a variety of angles or perspectives.`
     }, {
       role: "user",
-      content: `Generate tweet ideas for the topic: ${topic}`
+      content: `Please generate tweet ideas for the topic: ${topic}`
     }],
-    max_tokens: 150,
+    max_tokens: 350,
     temperature: 0.7
   });
 
